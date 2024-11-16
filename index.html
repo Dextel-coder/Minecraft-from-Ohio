@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Block Builder</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    // Set up the scene, camera, and renderer
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Create a simple block geometry
+    const blockGeometry = new THREE.BoxGeometry(1, 1, 1);
+    const blockMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    let blockMeshes = [];
+
+    // Function to create and place blocks in the scene
+    function placeBlock(x, y, z) {
+      const block = new THREE.Mesh(blockGeometry, blockMaterial);
+      block.position.set(x, y, z);
+      scene.add(block);
+      blockMeshes.push(block);
+    }
+
+    // Create a simple ground of blocks (just to visualize)
+    for (let x = -5; x < 5; x++) {
+      for (let z = -5; z < 5; z++) {
+        placeBlock(x, 0, z);
+      }
+    }
+
+    // Camera position
+    camera.position.z = 10;
+
+    // Mouse interaction - place/remove blocks
+    let placingBlock = true;
+    let raycaster = new THREE.Raycaster();
+    let mouse = new THREE.Vector2();
+
+    document.addEventListener('mousedown', (event) => {
+      event.preventDefault();
+
+      // Update mouse coordinates
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      // Get the intersection of the ray with the scene
+      raycaster.updateMatrixWorld();
+      const intersects = raycaster.intersectObject(scene);
+
+      if (intersects.length > 0) {
+        const intersection = intersects[0];
+        const position = intersection.point;
+
+        if (placingBlock) {
+          placeBlock(Math.floor(position.x), Math.floor(position.y), Math.floor(position.z));
+        } else {
+          removeBlock(Math.floor(position.x), Math.floor(position.y), Math.floor(position.z));
+        }
+      }
+    });
+
+    // Toggle between placing and removing blocks
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'p') {
+        placingBlock = true;
+      } else if (event.key === 'r') {
+        placingBlock = false;
+      }
+    });
+
+    // Remove blocks
+    function removeBlock(x, y, z) {
+      for (let i = 0; i < blockMeshes.length; i++) {
+        const block = blockMeshes[i];
+        if (Math.abs(block.position.x - x) < 0.5 && Math.abs(block.position.y - y) < 0.5 && Math.abs(block.position.z - z) < 0.5) {
+          scene.remove(block);
+          blockMeshes.splice(i, 1);
+          break;
+        }
+      }
+    }
+
+    // Update and render the scene
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
